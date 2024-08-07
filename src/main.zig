@@ -1,24 +1,51 @@
 const std = @import("std");
+const Scanner = @import("scanner.zig").Scanner;
 
 pub fn main() !void {
-    // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
-    std.debug.print("All your {s} are belong to us.\n", .{"codebase"});
+    const allocator = std.heap.page_allocator;
+    const args = try std.process.argsAlloc(std.heap.page_allocator);
+    defer allocator.free(args);
 
-    // stdout is for the actual output of your application, for example if you
-    // are implementing gzip, then only the compressed bytes should be sent to
-    // stdout, not any debugging messages.
-    const stdout_file = std.io.getStdOut().writer();
-    var bw = std.io.bufferedWriter(stdout_file);
-    const stdout = bw.writer();
-
-    try stdout.print("Run `zig build test` to run the tests.\n", .{});
-
-    try bw.flush(); // don't forget to flush!
+    if (args.len > 2) {
+        _ = try std.io.getStdErr().write("Usage: jlox [script]");
+    } else if (args.len == 2) {
+        try runFile(allocator, args[1]);
+    } else {
+        try runPrompt(allocator);
+    }
 }
 
-test "simple test" {
-    var list = std.ArrayList(i32).init(std.testing.allocator);
-    defer list.deinit(); // try commenting this out and see if zig detects the memory leak!
-    try list.append(42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
+fn runFile(allocator: std.mem.Allocator, path: []const u8) !void {
+    const file = try std.fs.openFileAbsolute(path, .{ .mode = .read_only });
+    const metadata = try file.metadata();
+    try run(allocator, try file.readToEndAlloc(allocator, metadata.size()));
+}
+
+fn runPrompt(
+    allocator: std.mem.Allocator,
+) !void {
+    const reader = std.io.getStdIn().reader();
+    var buffer = std.ArrayList(u8).init(allocator);
+    defer buffer.deinit();
+
+    while (true) {
+        _ = try std.io.getStdOut().write("> ");
+        reader.streamUntilDelimiter(buffer.writer(), '\n', null) catch |err| switch (err) {
+            error.EndOfStream => {
+                _ = try std.io.getStdOut().write("\nBye\n");
+                return;
+            },
+            else => return err,
+        };
+        try run(allocator, buffer.items);
+
+        try buffer.resize(0);
+    }
+}
+
+fn run(allocator: std.mem.Allocator, bytes: []const u8) !void {
+    var scanner = Scanner.init(allocator, bytes);
+    const tokens = try scanner.scanTokens();
+
+    std.debug.print("{any}\n", .{tokens});
 }
