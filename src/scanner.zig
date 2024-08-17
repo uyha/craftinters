@@ -1,6 +1,6 @@
 const std = @import("std");
-const Token = @import("Token.zig").Token;
-const TokenType = @import("Token.zig").TokenType;
+const Token = @import("token.zig").Token;
+const TokenType = @import("token.zig").TokenType;
 
 pub const Scanner = struct {
     source: []const u8,
