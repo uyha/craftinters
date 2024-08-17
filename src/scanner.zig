@@ -72,6 +72,9 @@ pub const Scanner = struct {
             ';' => self.addToken(.semicolon),
             '*' => self.addToken(.star),
             '!' => self.addToken(if (self.match('=')) .bang_equal else .bang),
+            '=' => self.addToken(if (self.match('=')) .equal_equal else .equal),
+            '<' => self.addToken(if (self.match('=')) .less_equal else .less),
+            '>' => self.addToken(if (self.match('=')) .greater_equal else .greater),
             '/' => {
                 if (self.match('/')) {
                     while (self.peek() != '\n' and !self.isAtEnd()) {
