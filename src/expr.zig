@@ -44,3 +44,28 @@ fn parathesize(writer: anytype, name: []const u8, args: anytype) std.posix.Write
     }
     try writer.print(")", .{});
 }
+
+pub fn rpnPrint(writer: anytype, expr: *const Expr) std.posix.WriteError!void {
+    switch (expr.*) {
+        .binary => |binary| {
+            try rpnPrint(writer, binary.left);
+            try rpnPrint(writer, binary.right);
+            try writer.print(" {s} ", .{binary.operator.lexeme});
+        },
+        .grouping => |groupping| {
+            try rpnPrint(writer, groupping.expression);
+        },
+        .literal => |literal| {
+            if (literal.value) |val| {
+                try writer.print("{s}", .{val});
+            } else {
+                try writer.print("nil", .{});
+            }
+        },
+        .unary => |unary| {
+            try rpnPrint(writer, unary.right);
+            try writer.print(" {s} ", .{unary.operator.lexeme});
+        },
+        // else => {},
+    }
+}

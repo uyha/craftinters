@@ -12,7 +12,7 @@ pub fn main() !void {
     const args = try std.process.argsAlloc(std.heap.page_allocator);
     defer allocator.free(args);
 
-    try expr.print(std.io.getStdOut().writer(), &Expr{
+    try expr.rpnPrint(std.io.getStdOut().writer(), &Expr{
         .binary = .{
             .left = &Expr{
                 .unary = .{
