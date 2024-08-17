@@ -1,11 +1,37 @@
 const std = @import("std");
 const Token = @import("token.zig").Token;
 
+pub const Literal = union(enum) {
+    nil: void,
+    bool: bool,
+    number: f64,
+    string: []const u8,
+};
+
 pub const Expr = union(enum) {
     binary: struct { left: *const Expr, operator: Token, right: *const Expr },
     grouping: struct { expression: *const Expr },
-    literal: struct { value: ?[]const u8 },
+    literal: Literal,
     unary: struct { operator: Token, right: *const Expr },
+
+    pub fn binary(left: *const Expr, operator: Token, right: *const Expr) Expr {
+        return Expr{
+            .binary = .{ .left = left, .operator = operator, .right = right },
+        };
+    }
+    pub fn grouping(expression: *const Expr) Expr {
+        return Expr{
+            .grouping = .{ .expression = expression },
+        };
+    }
+    pub fn literal(value: Literal) Expr {
+        return Expr{ .literal = value };
+    }
+    pub fn unary(operator: Token, right: *const Expr) Expr {
+        return Expr{
+            .unary = .{ .operator = operator, .right = right },
+        };
+    }
 };
 
 // Since this function is recursive in nature, inferred error sets cannot be used.
@@ -19,11 +45,12 @@ pub fn print(writer: anytype, expr: *const Expr) std.posix.WriteError!void {
             try parathesize(writer, "group", .{group.expression});
         },
         .literal => |literal| {
-            if (literal.value) |val| {
-                try writer.print("{s}", .{val});
-            } else {
-                try writer.print("nil", .{});
-            }
+            try switch (literal) {
+                .nil => writer.print("nil", .{}),
+                .number => |val| writer.print("{d}", .{val}),
+                .bool => |val| writer.print("{}", .{val}),
+                .string => |val| writer.print("\"{s}\"", .{val}),
+            };
         },
         .unary => |unary| {
             try parathesize(writer, unary.operator.lexeme, .{unary.right});

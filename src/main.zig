@@ -1,9 +1,11 @@
 const std = @import("std");
 const expr = @import("expr.zig");
-const token = @import("token.zig");
 
 const Expr = expr.Expr;
-const Token = token.Token;
+const Literal = expr.Literal;
+
+const Token = @import("token.zig").Token;
+const token = @import("token.zig").token;
 
 const Scanner = @import("scanner.zig").Scanner;
 
@@ -12,13 +14,27 @@ pub fn main() !void {
     const args = try std.process.argsAlloc(std.heap.page_allocator);
     defer allocator.free(args);
 
-    if (args.len > 2) {
-        _ = try std.io.getStdErr().write("Usage: jlox [script]");
-    } else if (args.len == 2) {
-        try runFile(allocator, args[1]);
-    } else {
-        try runPrompt(allocator);
-    }
+    try expr.print(
+        std.io.getStdOut().writer(),
+        &Expr.binary(
+            &Expr.unary(
+                token(.minus, "-", null, 1),
+                &Expr.literal(Literal{ .number = 123 }),
+            ),
+            token(.star, "*", null, 1),
+            &Expr.grouping(
+                &Expr.literal(Literal{ .number = 45.67 }),
+            ),
+        ),
+    );
+
+    // if (args.len > 2) {
+    //     _ = try std.io.getStdErr().write("Usage: jlox [script]");
+    // } else if (args.len == 2) {
+    //     try runFile(allocator, args[1]);
+    // } else {
+    //     try runPrompt(allocator);
+    // }
 }
 
 fn runFile(allocator: std.mem.Allocator, path: []const u8) !void {

@@ -66,3 +66,12 @@ pub const Token = struct {
         return std.fmt.format(writer, "{any} {s}", .{ self.type, self.lexeme });
     }
 };
+
+pub fn token(token_type: TokenType, lexeme: []const u8, literal: ?[]const u8, line: u32) Token {
+    return .{
+        .type = token_type,
+        .lexeme = lexeme,
+        .literal = literal,
+        .line = line,
+    };
+}
