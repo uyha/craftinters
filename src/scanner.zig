@@ -1,4 +1,6 @@
 const std = @import("std");
+
+const log = @import("log.zig");
 const Token = @import("token.zig").Token;
 const TokenType = @import("token.zig").TokenType;
 
@@ -96,7 +98,7 @@ pub const Scanner = struct {
                 } else if (isAlpha(c)) {
                     try self.identifier();
                 } else {
-                    try @"error"(self.line, "Unexpected character");
+                    try log.@"error"(self.line, "Unexpected character");
                 }
             },
         };
@@ -142,7 +144,7 @@ pub const Scanner = struct {
         }
 
         if (self.isAtEnd()) {
-            try @"error"(self.line, "Unterminated string..");
+            try log.@"error"(self.line, "Unterminated string..");
             return;
         }
 
@@ -203,15 +205,3 @@ pub const Scanner = struct {
         return isDigit(c) or isAlpha(c);
     }
 };
-
-fn @"error"(line: u32, message: []const u8) !void {
-    return report(line, "", message);
-}
-
-fn report(line: u32, where: []const u8, message: []const u8) !void {
-    try std.fmt.format(std.io.getStdErr().writer(), "[line {}] Error {s}: {s}\n", .{
-        line,
-        where,
-        message,
-    });
-}
