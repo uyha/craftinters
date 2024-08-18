@@ -19,11 +19,11 @@ pub fn main() !void {
         &Expr.binary(
             &Expr.unary(
                 token(.minus, "-", null, 1),
-                &Expr.literal(Literal{ .number = 123 }),
+                &Expr.literal(Literal{ .number = "123" }),
             ),
             token(.star, "*", null, 1),
             &Expr.grouping(
-                &Expr.literal(Literal{ .number = 45.67 }),
+                &Expr.literal(Literal{ .number = "45.67" }),
             ),
         ),
     );

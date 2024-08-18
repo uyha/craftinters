@@ -4,7 +4,7 @@ const Token = @import("token.zig").Token;
 pub const Literal = union(enum) {
     nil: void,
     bool: bool,
-    number: f64,
+    number: []const u8,
     string: []const u8,
 };
 
@@ -47,7 +47,7 @@ pub fn print(writer: anytype, expr: *const Expr) std.posix.WriteError!void {
         .literal => |literal| {
             try switch (literal) {
                 .nil => writer.print("nil", .{}),
-                .number => |val| writer.print("{d}", .{val}),
+                .number => |val| writer.print("{s}", .{val}),
                 .bool => |val| writer.print("{}", .{val}),
                 .string => |val| writer.print("\"{s}\"", .{val}),
             };
