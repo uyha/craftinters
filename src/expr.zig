@@ -1,4 +1,8 @@
 const std = @import("std");
+
+const ArenaAllocator = std.heap.ArenaAllocator;
+const Allocator = std.mem.Allocator;
+
 const Token = @import("token.zig").Token;
 
 pub const Literal = union(enum) {
@@ -13,24 +17,69 @@ pub const Expr = union(enum) {
     grouping: struct { expression: *const Expr },
     literal: Literal,
     unary: struct { operator: Token, right: *const Expr },
+};
 
-    pub fn binary(left: *const Expr, operator: Token, right: *const Expr) Expr {
-        return Expr{
-            .binary = .{ .left = left, .operator = operator, .right = right },
-        };
+pub const ExprAllocator = struct {
+    pub const Error = Allocator.Error;
+
+    allocator: ArenaAllocator,
+
+    pub fn init(allocator: Allocator) ExprAllocator {
+        return .{ .allocator = ArenaAllocator.init(allocator) };
     }
-    pub fn grouping(expression: *const Expr) Expr {
-        return Expr{
+    pub fn deinit(self: ExprAllocator) void {
+        self.allocator.deinit();
+    }
+
+    pub fn binary(
+        self: *ExprAllocator,
+        left: *const Expr,
+        operator: Token,
+        right: *const Expr,
+    ) Error!*Expr {
+        const result = try self.allocator.allocator().create(Expr);
+
+        result.* = .{
+            .binary = .{
+                .left = left,
+                .operator = operator,
+                .right = right,
+            },
+        };
+
+        return result;
+    }
+    pub fn grouping(self: *ExprAllocator, expression: *const Expr) Error!*Expr {
+        const result = try self.allocator.allocator().create(Expr);
+
+        result.* = .{
             .grouping = .{ .expression = expression },
         };
+
+        return result;
     }
-    pub fn literal(value: Literal) Expr {
-        return Expr{ .literal = value };
+    pub fn literal(self: *ExprAllocator, value: Literal) Error!*Expr {
+        const result = try self.allocator.allocator().create(Expr);
+
+        result.* = .{ .literal = value };
+
+        return result;
     }
-    pub fn unary(operator: Token, right: *const Expr) Expr {
-        return Expr{
-            .unary = .{ .operator = operator, .right = right },
+    pub fn unary(
+        self: *ExprAllocator,
+        operator: Token,
+        right: *const Expr,
+    ) Error!*Expr {
+        const result = try self.allocator.allocator().create(Expr);
+
+        result.* = .{
+            .unary = .{
+                .operator = operator,
+                .right = right,
+            },
         };
+
+        return result;
     }
 };
 
