@@ -11,9 +11,12 @@ const Scanner = @import("scanner.zig").Scanner;
 const Parser = @import("parser.zig").Parser;
 
 pub fn main() !void {
-    const allocator = std.heap.page_allocator;
-    const args = try std.process.argsAlloc(std.heap.page_allocator);
-    defer allocator.free(args);
+    var general_purpose_allocator = std.heap.GeneralPurposeAllocator(.{}){};
+    defer std.debug.assert(general_purpose_allocator.deinit() == .ok);
+
+    const allocator = general_purpose_allocator.allocator();
+    const args = try std.process.argsAlloc(allocator);
+    defer std.process.argsFree(allocator, args);
 
     if (args.len > 2) {
         _ = try std.io.getStdErr().write("Usage: jlox [script]");
@@ -54,9 +57,13 @@ fn runPrompt(
 
 fn run(allocator: std.mem.Allocator, bytes: []const u8) !void {
     var scanner = Scanner.init(allocator, bytes);
+    defer scanner.deinit();
+
     const tokens = try scanner.scanTokens();
+
     var parser = Parser.init(tokens.items, allocator);
     defer parser.deinit();
+
     const expression = try parser.parse();
     try expr.print(std.io.getStdOut().writer(), expression);
 }
